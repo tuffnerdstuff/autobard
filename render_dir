@@ -1,0 +1,58 @@
+#!/bin/bash
+
+DIR="$1"
+
+hash_all() {
+	find "$DIR" -type f -not -path "$DIR/output/*" -exec sha256sum "{}" + | sha256sum
+}
+
+update_hash() {
+	hash_all > "$DIR/output/hash"
+}
+
+has_changed() {
+	#local old_hash="$(cat $DIR/output/hash)"
+	#local new_hash="$(hash_all)"
+	#echo "$old_hash != $new_hash"
+	test "$(cat $DIR/output/hash)" != "$(hash_all)"
+}
+
+is_dir_empty() {
+	test -z "$(ls -A $DIR)"
+}
+
+is_bard_project() {
+	test -f "$DIR/bard.toml"
+}
+
+init_remote() {
+	rclone sync "$DIR" "$AUTOBARD_REMOTE_NAME:$AUTOBARD_REMOTE_DIR/$(basename $DIR)"
+}
+
+update_remote() {
+	rclone sync "$DIR/output" "$AUTOBARD_REMOTE_NAME:$AUTOBARD_REMOTE_DIR/$(basename $DIR)/output"
+}
+
+cd "$DIR"
+if is_dir_empty 
+then
+	echo "$DIR is empty, initializing project ..."
+	bard init
+	mkdir output
+	init_remote
+elif is_bard_project
+then
+
+	if  has_changed 
+	then
+		echo "$DIR changed, rendering project ..."
+		bard make
+		update_hash
+		update_remote
+	else
+		echo "$DIR didn't change nothing to do"
+	fi
+
+else
+	echo "$DIR is not a bard project, skipping"
+fi

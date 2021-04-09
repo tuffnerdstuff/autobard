@@ -1,0 +1,9 @@
+#!/bin/bash
+while true
+do
+	echo "[$(date -Iseconds)] UPDATING"
+	rclone sync "$AUTOBARD_REMOTE_NAME:$AUTOBARD_REMOTE_DIR" /songbooks && find /songbooks -mindepth 1 -maxdepth 1 -type d -exec render_dir "{}" \;                                                       
+	echo "[$(date -Iseconds)] DONE"
+	sleep $AUTOBARD_INTERVAL
+
+done

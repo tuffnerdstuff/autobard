@@ -46,7 +46,7 @@ then
 	if  has_changed 
 	then
 		echo "$DIR changed, rendering project ..."
-		bard make
+		bard make > /dev/null
 		update_hash
 		update_remote
 	else
